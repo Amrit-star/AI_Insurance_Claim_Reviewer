@@ -3,6 +3,9 @@ import requests
 import sys
 import os
 
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 def execute_eval():
     print("Executing claims pipeline evaluation script...")
     
@@ -22,10 +25,12 @@ def execute_eval():
         name = case["case_name"]
         target = case["expected"].get("decision")
         
+        payload = case["input"].copy()
+        payload["case_id"] = case_id
         try:
-            res = requests.post("http://127.0.0.1:8000/api/v1/claims/process", json=case["input"])
+            res = requests.post("http://127.0.0.1:8000/api/v1/claims/process", json=payload)
             if res.status_code != 200:
-                print(f"| {case_id} | {name} | {target} | ERROR ({res.status_code}) | 🔴 FAIL | Server returned {res.text} |")
+                print(f"| {case_id} | {name} | {target} | ERROR ({res.status_code}) | [FAIL] | Server returned {res.text} |")
                 unmatched += 1
                 continue
                 
@@ -40,7 +45,7 @@ def execute_eval():
             elif str(target).upper() == str(gen_decision).upper():
                 is_match = True
                 
-            status_badge = "🟢 PASS" if is_match else "🔴 FAIL"
+            status_badge = "[PASS]" if is_match else "[FAIL]"
             if not is_match:
                 unmatched += 1
                 
@@ -48,7 +53,7 @@ def execute_eval():
             print(f"| {case_id} | {name} | {target} | {gen_decision} | {status_badge} | {explanation[:100]}... |")
             
         except Exception as e:
-            print(f"| {case_id} | {name} | {target} | OFFLINE | 🔴 FAIL | Backend connectivity exception: {str(e)} |")
+            print(f"| {case_id} | {name} | {target} | OFFLINE | [FAIL] | Backend connectivity exception: {str(e)} |")
             unmatched += 1
 
     print(f"\nExecution complete. Unmatched cases identified: {unmatched}")

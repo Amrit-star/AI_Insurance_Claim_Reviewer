@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Dict, Any, List
 from src.schemas import ExtractedDocument, AdjudicationBreakdown, ClaimAdjudicationResult, AgentTrace
 from src.agents.base import BaseAgent
@@ -42,7 +43,8 @@ class AdjudicationAgent(BaseAgent):
             for diagnosis in diagnoses:
                 diag_lower = diagnosis.lower()
                 for condition_key, waiting_days in waiting_rules.items():
-                    if condition_key.replace("_", " ") in diag_lower or condition_key in diag_lower:
+                    condition_name = condition_key.replace("_", " ")
+                    if re.search(r'\b' + re.escape(condition_name) + r'\b', diag_lower):
                         if days_enrolled < waiting_days:
                             eligibility_date = join_date + datetime.timedelta(days=waiting_days)
                             return ClaimAdjudicationResult(
@@ -50,15 +52,15 @@ class AdjudicationAgent(BaseAgent):
                                 decision="REJECTED",
                                 rejection_reasons=["WAITING_PERIOD"],
                                 notes=(
-                                    f"Claim is within the {waiting_days}-day waiting period for {condition_key.replace('_', ' ').title()}. "
-                                    f"Member will be eligible for {condition_key.replace('_', ' ')} claims from {eligibility_date.isoformat()}."
+                                    f"Claim is within the {waiting_days}-day waiting period for {condition_name.title()}. "
+                                    f"Member will be eligible for {condition_name} claims from {eligibility_date.isoformat()}."
                                 ),
                                 confidence_score=0.98
                             )
 
         # TC008: Check Per-Claim Limit
         per_claim_limit = float(policy_coverage.get("per_claim_limit", 5000.0))
-        if claimed_amount > per_claim_limit:
+        if category == "consultation" and claimed_amount > per_claim_limit:
             return ClaimAdjudicationResult(
                 case_id=case_id,
                 decision="REJECTED",

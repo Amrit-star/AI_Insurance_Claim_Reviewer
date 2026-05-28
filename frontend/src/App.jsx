@@ -32,7 +32,7 @@ export default function App() {
       const response = await fetch('http://127.0.0.1:8000/api/v1/claims/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(activeCase.input),
+        body: JSON.stringify({ ...activeCase.input, case_id: activeCase.case_id }),
       });
       const data = await response.json();
       setResult(data);
