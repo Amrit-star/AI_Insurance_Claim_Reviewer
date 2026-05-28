@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Moon, Sun, Play, FileJson, ShieldAlert, Cpu } from 'lucide-react';
 import ClaimMetrics from './components/ClaimMetrics';
 import PipelineTrace from './components/PipelineTrace';
 
@@ -7,6 +9,16 @@ export default function App() {
   const [activeCase, setActiveCase] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isDark, setIsDark] = useState(true);
+
+  // Toggle Dark Mode
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   useEffect(() => {
     const loadSuite = async () => {
@@ -29,10 +41,11 @@ export default function App() {
     setLoading(true);
     setResult(null);
     try {
+      const payload = { ...activeCase.input, case_id: activeCase.case_id };
       const response = await fetch('http://127.0.0.1:8000/api/v1/claims/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...activeCase.input, case_id: activeCase.case_id }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       setResult(data);
@@ -45,114 +58,164 @@ export default function App() {
 
   if (!activeCase) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse flex space-x-4">
-          <div className="rounded-full bg-slate-300 h-12 w-12"></div>
-          <div className="flex-1 space-y-4 py-1">
-            <div className="h-4 bg-slate-300 rounded w-3/4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-slate-300 rounded"></div>
-              <div className="h-4 bg-slate-300 rounded w-5/6"></div>
-            </div>
-          </div>
+      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'mesh-bg-dark' : 'mesh-bg-light'}`}>
+        <div className="animate-spin-slow">
+          <Cpu className="w-12 h-12 text-brand-accent opacity-50" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-plum-blue to-blue-500 drop-shadow-sm">
-              Plum Adjudication Engine
+    <div className={`min-h-screen ${isDark ? 'mesh-bg-dark' : 'mesh-bg-light'} font-sans relative overflow-x-hidden transition-colors duration-500`}>
+      {/* Background Decorators */}
+      <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-brand-accent/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-plum-blue/10 rounded-full blur-[120px] pointer-events-none" />
+      
+      <div className="max-w-7xl mx-auto p-4 md:p-8 relative z-10">
+        
+        {/* Header */}
+        <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-blue-500 dark:from-brand-accent dark:to-indigo-400 drop-shadow-sm tracking-tight mb-2">
+              Plum Neural Adjudication
             </h1>
-            <p className="text-sm text-slate-500 mt-2 font-medium">Enterprise Health Claims Processing System</p>
-          </div>
-          <div className="glass px-4 py-2 rounded-full border-blue-200 shadow-sm flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-xs font-bold uppercase tracking-widest text-slate-700">
-              Policy: PLUM_GHI_2024
-            </span>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Multi-Agent Enterprise Engine v2.0</p>
+          </motion.div>
+          
+          <div className="flex items-center gap-4">
+            <div className="glass px-4 py-2 rounded-full flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-glow"></div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-300">
+                Policy: PLUM_GHI_2024
+              </span>
+            </div>
+            <button 
+              onClick={() => setIsDark(!isDark)}
+              className="glass p-2 rounded-full text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors"
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* LEFT SIDEBAR - CONTROL PANEL */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="glass p-6 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-full blur-3xl opacity-50 -mr-10 -mt-10"></div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="glass p-6 rounded-3xl"
+            >
+              <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4" />
+                Scenario Injector
+              </h2>
               
-              <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-widest mb-4">Control Panel</h2>
-              
-              <div className="relative z-10">
-                <label className="block text-xs font-semibold text-slate-500 mb-2">Select Evaluation Scenario</label>
-                <select 
-                  className="w-full p-3 bg-white/80 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-plum-blue/50 focus:border-plum-blue/50 transition-shadow shadow-sm cursor-pointer"
-                  value={activeCase.case_id}
-                  onChange={(e) => {
-                    const selected = testCases.find(tc => tc.case_id === e.target.value);
-                    setActiveCase(selected);
-                    setResult(null);
-                  }}
-                >
-                  {testCases.map(tc => (
-                    <option key={tc.case_id} value={tc.case_id}>{tc.case_id} - {tc.case_name}</option>
-                  ))}
-                </select>
+              <div className="space-y-6">
+                <div>
+                  <select 
+                    className="w-full p-3.5 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-accent/50 transition-all cursor-pointer appearance-none"
+                    value={activeCase.case_id}
+                    onChange={(e) => {
+                      const selected = testCases.find(tc => tc.case_id === e.target.value);
+                      setActiveCase(selected);
+                      setResult(null);
+                    }}
+                  >
+                    {testCases.map(tc => (
+                      <option key={tc.case_id} value={tc.case_id}>{tc.case_id} - {tc.case_name}</option>
+                    ))}
+                  </select>
+                </div>
                 
                 <button
                   onClick={runPipeline}
                   disabled={loading}
-                  className="w-full mt-6 py-3.5 px-4 bg-gradient-to-r from-plum-blue to-blue-600 hover:from-blue-700 hover:to-blue-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg hover:shadow-blue-500/30 disabled:from-slate-400 disabled:to-slate-300 disabled:shadow-none transform active:scale-[0.98] flex justify-center items-center gap-2"
+                  className="w-full py-4 px-4 bg-slate-800 dark:bg-slate-100 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-sm transition-all shadow-lg hover:shadow-brand-accent/20 disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-3 relative overflow-hidden group"
                 >
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                   {loading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  ) : 'Run Neural Adjudication'}
+                    <Cpu className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current" />
+                      Execute Adjudication
+                    </>
+                  )}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="glass-dark p-6 rounded-2xl relative overflow-hidden">
-              <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                Input Payload
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="glass p-6 rounded-3xl"
+            >
+              <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <FileJson className="w-4 h-4" />
+                Raw Payload
               </h2>
-              <div className="relative z-10">
-                <pre className="text-[11px] text-emerald-400 p-4 rounded-xl bg-black/40 overflow-x-auto max-h-96 custom-scrollbar border border-slate-700/50 shadow-inner">
+              <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto max-h-[400px] custom-scrollbar border border-slate-800 shadow-inner relative">
+                <div className="absolute top-0 right-0 p-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  </div>
+                </div>
+                <pre className="text-[11px] text-brand-accent/90 font-mono mt-4 leading-relaxed">
                   {JSON.stringify(activeCase.input, null, 2)}
                 </pre>
               </div>
-            </div>
+            </motion.div>
           </div>
 
+          {/* RIGHT MAIN AREA */}
           <div className="lg:col-span-8">
-            {result ? (
-              <div className="space-y-6 animate-fade-in">
-                <ClaimMetrics result={result} />
-                
-                {result.notes && (
-                  <div className="glass p-6 rounded-2xl border-l-4 border-l-plum-blue bg-blue-50/30">
-                    <h3 className="font-bold text-slate-800 mb-3 text-sm uppercase tracking-widest">Engine Explanation</h3>
-                    <p className="text-sm text-slate-700 leading-relaxed font-mono font-medium">
-                      {result.notes}
-                    </p>
-                  </div>
-                )}
+            <AnimatePresence mode="wait">
+              {result ? (
+                <motion.div 
+                  key="results"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="space-y-8"
+                >
+                  <ClaimMetrics result={result} />
+                  
+                  {result.notes && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      className="glass p-6 rounded-3xl border-l-4 border-l-brand-accent bg-brand-accent/5"
+                    >
+                      <h3 className="font-bold text-slate-800 dark:text-white mb-2 text-sm uppercase tracking-widest">Reasoning Engine</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
+                        {result.notes}
+                      </p>
+                    </motion.div>
+                  )}
 
-                <PipelineTrace traces={result.agent_traces} />
-              </div>
-            ) : (
-              <div className="h-full min-h-[500px] flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-3xl bg-slate-50/50 p-8 shadow-sm">
-                <div className="w-20 h-20 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mb-6 shadow-inner">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-700 mb-2">Awaiting Instructions</h3>
-                <p className="text-slate-500 text-sm max-w-sm text-center font-medium leading-relaxed">
-                  Select a test scenario from the control panel and execute the pipeline to view step-by-step trace telemetry.
-                </p>
-              </div>
-            )}
+                  <PipelineTrace traces={result.agent_traces} />
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="h-full min-h-[600px] flex flex-col items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl bg-slate-50/20 dark:bg-slate-900/20 p-8"
+                >
+                  <div className="w-24 h-24 rounded-full glass flex items-center justify-center mb-8 relative">
+                    <div className="absolute inset-0 rounded-full border border-brand-accent/20 animate-[ping_3s_ease-out_infinite]" />
+                    <Cpu className="w-10 h-10 text-brand-accent opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3 tracking-tight">System Standby</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm text-center leading-relaxed">
+                    Select a scenario from the injector panel and initiate the neural adjudication sequence to observe agent behavior.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

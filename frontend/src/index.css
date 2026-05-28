@@ -6,21 +6,45 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-lg border border-white/50 shadow-xl;
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-slate-900/60 dark:border-slate-700/50 dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)];
   }
-  .glass-dark {
-    @apply bg-gray-900/70 backdrop-blur-lg border border-gray-700/50 shadow-2xl;
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-md border border-white/40 shadow-sm dark:bg-slate-800/40 dark:border-slate-700/40;
   }
-  .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
+  .text-glow {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  .mesh-bg-light {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 40% 20%, hsla(210,100%,93%,1) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(189,100%,90%,1) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(210,100%,95%,1) 0px, transparent 50%);
+  }
+  .mesh-bg-dark {
+    background-color: #0f172a;
+    background-image: 
+      radial-gradient(at 40% 20%, hsla(222,47%,15%,1) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, hsla(222,47%,11%,1) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, hsla(217,33%,17%,1) 0px, transparent 50%);
+  }
 }
 
 body {
-  @apply bg-gradient-to-br from-slate-100 to-blue-50 text-slate-800 antialiased min-h-screen;
+  @apply antialiased min-h-screen text-slate-800 dark:text-slate-200 transition-colors duration-500;
+}
+
+/* Custom Webkit Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
 }
