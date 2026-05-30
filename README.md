@@ -255,6 +255,9 @@ And uncomment the Vercel URL in `backend/api/main.py` CORS section:
 ```
 
 Redeploy both. The application is now fully live.
+```
+App url= https://ai-insurance-claim-reviewer.vercel.app/
+```
 
 > **Free tier note:** Render free tier spins down after 15 minutes of inactivity. First request after idle takes ~30 seconds to cold-start. Upgrade to paid ($7/month) for always-on.
 
