@@ -28,7 +28,7 @@ _allowed_origins = [
     "http://localhost:5173",
     "http://localhost:3000",
     # Add your Vercel frontend URL here after deploying:
-    # "https://your-app.vercel.app",
+    "https://ai-insurance-claim-reviewer.vercel.app/",
 ]
 # Allow any Vercel preview deployment URL automatically
 _vercel_pattern = os.getenv("FRONTEND_URL", "")
