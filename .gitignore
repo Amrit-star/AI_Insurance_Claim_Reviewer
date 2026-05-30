@@ -1,5 +1,3 @@
-assignment/
-plan.md
 node_modules/
 dist/
 venv/
@@ -7,3 +5,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+*.egg-info/
+.pytest_cache/
+assignment/
+plan.md

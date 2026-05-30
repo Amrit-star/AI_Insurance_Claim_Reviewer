@@ -12,9 +12,14 @@ export default {
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
       },
       colors: {
+        // Plum brand palette
+        'brand-accent': '#FC2B56',       // Plum red
+        'brand-accent-hover': '#e01f48',
+        'plum-maroon': '#1a0826',        // deep background
+        'plum-maroon-light': '#2d1040',  // card surfaces
+        'plum-maroon-border': '#3d1a58', // borders
         'plum-blue': '#1e3a8a',
-        'plum-light': '#eff6ff',
-        'brand-accent': '#06b6d4', // Cyan accent
+        'plum-light': '#fdf2f8',
       },
       animation: {
         'spin-slow': 'spin 3s linear infinite',

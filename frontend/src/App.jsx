@@ -1,223 +1,265 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Play, FileJson, ShieldAlert, Cpu } from 'lucide-react';
+import {
+  Moon, Sun, Play, FileJson, ShieldCheck, Cpu, Upload, Layers,
+} from 'lucide-react';
 import ClaimMetrics from './components/ClaimMetrics';
 import PipelineTrace from './components/PipelineTrace';
+import ClaimSubmitForm from './components/ClaimSubmitForm';
+import API_URL from './api';
+
+const TABS = [
+  { id: 'submit', label: 'Submit Claim', icon: Upload, desc: 'Upload real documents' },
+  { id: 'suite',  label: 'Test Suite',  icon: Layers,  desc: 'Run scenario cases' },
+];
+
+function formatINR(n) {
+  if (!n) return '—';
+  return '₹' + Number(n).toLocaleString('en-IN');
+}
 
 export default function App() {
-  const [testCases, setTestCases] = useState([]);
+  const [activeTab, setActiveTab]   = useState('submit');
+  const [testCases, setTestCases]   = useState([]);
   const [activeCase, setActiveCase] = useState(null);
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [result, setResult]         = useState(null);
+  const [loading, setLoading]       = useState(false);
+  const [isDark, setIsDark]         = useState(true);
+  const [policySummary, setPolicySummary] = useState(null);
 
-  // Toggle Dark Mode
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', isDark);
   }, [isDark]);
 
   useEffect(() => {
-    const loadSuite = async () => {
-      try {
-        const response = await fetch('/data/test_cases.json');
-        if (response.ok) {
-          const raw = await response.json();
-          setTestCases(raw.test_cases);
-          setActiveCase(raw.test_cases[0]);
-        }
-      } catch (err) {
-        console.error("Local schema import failure.", err);
-      }
-    };
-    loadSuite();
+    fetch('/data/test_cases.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(raw => { if (raw) { setTestCases(raw.test_cases); setActiveCase(raw.test_cases[0]); } })
+      .catch(() => {});
+
+    fetch('${API_URL}/api/v1/policy/summary')
+      .then(r => r.json())
+      .then(setPolicySummary)
+      .catch(() => {});
   }, []);
 
   const runPipeline = async () => {
     if (!activeCase) return;
-    setLoading(true);
-    setResult(null);
+    setLoading(true); setResult(null);
     try {
-      const payload = { ...activeCase.input, case_id: activeCase.case_id };
-      const response = await fetch('http://127.0.0.1:8000/api/v1/claims/process', {
+      const res = await fetch('${API_URL}/api/v1/claims/process', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...activeCase.input, case_id: activeCase.case_id }),
       });
-      const data = await response.json();
-      setResult(data);
-    } catch (err) {
-      console.error("Pipeline failure:", err);
-    } finally {
-      setLoading(false);
-    }
+      setResult(await res.json());
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  if (!activeCase) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center ${isDark ? 'mesh-bg-dark' : 'mesh-bg-light'}`}>
-        <div className="animate-spin-slow">
-          <Cpu className="w-12 h-12 text-brand-accent opacity-50" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`min-h-screen ${isDark ? 'mesh-bg-dark' : 'mesh-bg-light'} font-sans relative overflow-x-hidden transition-colors duration-500`}>
-      {/* Background Decorators */}
-      <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-brand-accent/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-plum-blue/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto p-4 md:p-8 relative z-10">
-        
-        {/* Header */}
-        <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-blue-500 dark:from-brand-accent dark:to-indigo-400 drop-shadow-sm tracking-tight mb-2">
-              Plum Neural Adjudication
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Multi-Agent Enterprise Engine v2.0</p>
-          </motion.div>
-          
+    <div className={`min-h-screen ${isDark ? 'mesh-bg-dark' : 'mesh-bg-light'} font-sans overflow-x-hidden transition-colors duration-500`}>
+      {/* Ambient glows */}
+      <div className="fixed top-0 right-0 w-[800px] h-[600px] bg-brand-accent/5 rounded-full blur-[150px] pointer-events-none" />
+      <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[150px] pointer-events-none" />
+
+      {/* ── Top Nav ───────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-30 bg-white/60 dark:bg-[#100720]/90 backdrop-blur-2xl border-b border-black/5 dark:border-white/[0.06]">
+        {/* Primary bar */}
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="glass px-4 py-2 rounded-full flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-glow"></div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600 dark:text-slate-300">
-                Policy: PLUM_GHI_2024
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-brand-accent tracking-tight leading-none">plum</span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2 border-l border-slate-200 dark:border-slate-700 pl-2">
+                Claims Engine
               </span>
             </div>
-            <button 
-              onClick={() => setIsDark(!isDark)}
-              className="glass p-2 rounded-full text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors"
-            >
-              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-glow" />
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                {policySummary?.policy_id ?? 'Loading…'}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden lg:block text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+              Multi-Agent Adjudication System
+            </span>
+            <button onClick={() => setIsDark(!isDark)}
+              className="p-2 rounded-xl text-slate-400 dark:text-slate-400 hover:text-brand-accent hover:bg-brand-accent/10 transition-all">
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* LEFT SIDEBAR - CONTROL PANEL */}
-          <div className="lg:col-span-4 space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="glass p-6 rounded-3xl"
-            >
-              <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" />
-                Scenario Injector
-              </h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <select 
-                    className="w-full p-3.5 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-accent/50 transition-all cursor-pointer appearance-none"
-                    value={activeCase.case_id}
-                    onChange={(e) => {
-                      const selected = testCases.find(tc => tc.case_id === e.target.value);
-                      setActiveCase(selected);
-                      setResult(null);
-                    }}
-                  >
-                    {testCases.map(tc => (
-                      <option key={tc.case_id} value={tc.case_id}>{tc.case_id} - {tc.case_name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <button
-                  onClick={runPipeline}
-                  disabled={loading}
-                  className="w-full py-4 px-4 bg-slate-800 dark:bg-slate-100 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-sm transition-all shadow-lg hover:shadow-brand-accent/20 disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-3 relative overflow-hidden group"
-                >
-                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                  {loading ? (
-                    <Cpu className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 fill-current" />
-                      Execute Adjudication
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="glass p-6 rounded-3xl"
-            >
-              <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <FileJson className="w-4 h-4" />
-                Raw Payload
-              </h2>
-              <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto max-h-[400px] custom-scrollbar border border-slate-800 shadow-inner relative">
-                <div className="absolute top-0 right-0 p-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  </div>
-                </div>
-                <pre className="text-[11px] text-brand-accent/90 font-mono mt-4 leading-relaxed">
-                  {JSON.stringify(activeCase.input, null, 2)}
-                </pre>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* RIGHT MAIN AREA */}
-          <div className="lg:col-span-8">
-            <AnimatePresence mode="wait">
-              {result ? (
-                <motion.div 
-                  key="results"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  className="space-y-8"
-                >
-                  <ClaimMetrics result={result} />
-                  
-                  {result.notes && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                      className="glass p-6 rounded-3xl border-l-4 border-l-brand-accent bg-brand-accent/5"
-                    >
-                      <h3 className="font-bold text-slate-800 dark:text-white mb-2 text-sm uppercase tracking-widest">Reasoning Engine</h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-mono">
-                        {result.notes}
-                      </p>
-                    </motion.div>
-                  )}
-
-                  <PipelineTrace traces={result.agent_traces} />
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full min-h-[600px] flex flex-col items-center justify-center border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl bg-slate-50/20 dark:bg-slate-900/20 p-8"
-                >
-                  <div className="w-24 h-24 rounded-full glass flex items-center justify-center mb-8 relative">
-                    <div className="absolute inset-0 rounded-full border border-brand-accent/20 animate-[ping_3s_ease-out_infinite]" />
-                    <Cpu className="w-10 h-10 text-brand-accent opacity-80" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3 tracking-tight">System Standby</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm text-center leading-relaxed">
-                    Select a scenario from the injector panel and initiate the neural adjudication sequence to observe agent behavior.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
         </div>
+
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 relative z-10">
+
+        {/* ── Page header ─────────────────────────────────────────── */}
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          className="mb-7">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+            {activeTab === 'submit' ? 'Submit a New Claim' : 'Adjudication Test Suite'}
+          </h1>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+            {activeTab === 'submit'
+              ? 'Upload medical documents — Gemini Vision classifies and extracts, policy rules adjudicate.'
+              : 'Run pre-built scenarios against the live pipeline and inspect the full agent trace.'}
+          </p>
+        </motion.div>
+
+        {/* ── Tab bar ─────────────────────────────────────────────── */}
+        <div className="mb-7 flex gap-2 border-b border-black/[0.06] dark:border-white/[0.06] pb-0">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-all duration-150 relative
+                  ${active
+                    ? 'text-brand-accent'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {active && (
+                  <motion.div layoutId="tab-underline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-accent rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Tab content ─────────────────────────────────────────── */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'submit' && (
+            <motion.div key="submit"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
+            >
+              <ClaimSubmitForm />
+            </motion.div>
+          )}
+
+          {activeTab === 'suite' && (
+            <motion.div key="suite"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
+            >
+              {!activeCase ? (
+                <div className="flex items-center justify-center h-64">
+                  <Cpu className="w-10 h-10 text-brand-accent opacity-40 animate-spin-slow" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Sidebar */}
+                  <div className="lg:col-span-4 space-y-5">
+                    {/* Scenario selector */}
+                    <div className="glass rounded-3xl p-6 space-y-5">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-brand-accent" />
+                        <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          Scenario Injector
+                        </h2>
+                      </div>
+                      <div className="relative">
+                        <select
+                          className="w-full appearance-none pl-4 pr-10 py-3 rounded-xl text-sm font-semibold
+                            bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08]
+                            text-slate-800 dark:text-slate-100
+                            [&>option]:bg-[#1e0d30] [&>option]:text-slate-100
+                            focus:outline-none focus:ring-2 focus:ring-brand-accent/40 cursor-pointer transition-all"
+                          value={activeCase.case_id}
+                          onChange={(e) => { setActiveCase(testCases.find(tc => tc.case_id === e.target.value)); setResult(null); }}
+                        >
+                          {testCases.map(tc => (
+                            <option key={tc.case_id} value={tc.case_id}>{tc.case_id} — {tc.case_name}</option>
+                          ))}
+                        </select>
+                        <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+
+                      <button
+                        onClick={runPipeline}
+                        disabled={loading}
+                        className="w-full py-3.5 rounded-xl font-bold text-sm text-white
+                          bg-brand-accent hover:bg-[#e01f48] disabled:opacity-40
+                          shadow-[0_4px_20px_rgba(252,43,86,0.35)] hover:shadow-[0_6px_28px_rgba(252,43,86,0.5)]
+                          transition-all duration-200 flex items-center justify-center gap-2"
+                      >
+                        {loading
+                          ? <><Cpu className="w-4 h-4 animate-spin" /> Processing…</>
+                          : <><Play className="w-4 h-4 fill-current" /> Execute Adjudication</>
+                        }
+                      </button>
+                    </div>
+
+                    {/* Raw payload */}
+                    <div className="glass rounded-3xl p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <FileJson className="w-4 h-4 text-brand-accent" />
+                        <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                          Raw Payload
+                        </h2>
+                      </div>
+                      <div className="relative bg-[#0a0418] rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5">
+                          {['bg-rose-500','bg-amber-400','bg-emerald-500'].map(c => (
+                            <span key={c} className={`w-2.5 h-2.5 rounded-full ${c}`} />
+                          ))}
+                          <span className="ml-2 text-[10px] text-slate-600 font-mono">claim_payload.json</span>
+                        </div>
+                        <pre className="p-4 text-[11px] text-brand-accent/80 font-mono leading-relaxed overflow-x-auto max-h-[340px]">
+                          {JSON.stringify(activeCase.input, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Results panel */}
+                  <div className="lg:col-span-8">
+                    <AnimatePresence mode="wait">
+                      {result ? (
+                        <motion.div key="results" initial={{ opacity: 0, scale: 0.99 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                          <ClaimMetrics result={result} />
+                          {result.notes && (
+                            <div className="glass gradient-border rounded-3xl p-6">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Reasoning Engine Output</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-mono">{result.notes}</p>
+                            </div>
+                          )}
+                          <PipelineTrace traces={result.agent_traces} />
+                        </motion.div>
+                      ) : (
+                        <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          className="h-full min-h-[480px] flex flex-col items-center justify-center
+                            border-2 border-dashed border-slate-200 dark:border-white/[0.06]
+                            rounded-3xl p-10 text-center"
+                        >
+                          <div className="relative mb-6">
+                            <div className="w-20 h-20 rounded-2xl glass flex items-center justify-center">
+                              <Cpu className="w-9 h-9 text-brand-accent/60" />
+                            </div>
+                            <div className="absolute -inset-2 rounded-3xl border border-brand-accent/15 animate-[ping_3s_ease-out_infinite]" />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">System Standby</h3>
+                          <p className="text-sm text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
+                            Select a test scenario and click Execute to run the full adjudication pipeline.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
