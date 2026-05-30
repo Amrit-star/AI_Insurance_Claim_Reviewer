@@ -211,7 +211,7 @@ export default function ClaimSubmitForm() {
 
   useEffect(() => {
     // Fetch members
-    fetch('${API_URL}/api/v1/members')
+    fetch(`${API_URL}/api/v1/members`)
       .then(r => r.json())
       .then(data => {
         setMembers(data);
@@ -220,11 +220,11 @@ export default function ClaimSubmitForm() {
       .catch(() => {});
 
     // Fetch network hospitals
-    fetch('${API_URL}/api/v1/hospitals')
+    fetch(`${API_URL}/api/v1/hospitals`)
       .then(r => r.json()).then(setHospitals).catch(() => {});
 
     // Fetch policy summary → categories, required_docs, policy_id
-    fetch('${API_URL}/api/v1/policy/summary')
+    fetch(`${API_URL}/api/v1/policy/summary`)
       .then(r => r.json())
       .then(data => {
         setPolicy(data);
@@ -270,7 +270,7 @@ export default function ClaimSubmitForm() {
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     files.forEach(f => fd.append('documents', f));
     try {
-      const res = await fetch('${API_URL}/api/v1/claims/submit', { method: 'POST', body: fd });
+      const res = await fetch(`${API_URL}/api/v1/claims/submit`, { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Submission failed');
       setResult(data);

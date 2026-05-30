@@ -37,7 +37,7 @@ export default function App() {
       .then(raw => { if (raw) { setTestCases(raw.test_cases); setActiveCase(raw.test_cases[0]); } })
       .catch(() => {});
 
-    fetch('${API_URL}/api/v1/policy/summary')
+    fetch(`${API_URL}/api/v1/policy/summary`)
       .then(r => r.json())
       .then(setPolicySummary)
       .catch(() => {});
@@ -47,7 +47,7 @@ export default function App() {
     if (!activeCase) return;
     setLoading(true); setResult(null);
     try {
-      const res = await fetch('${API_URL}/api/v1/claims/process', {
+      const res = await fetch(`${API_URL}/api/v1/claims/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...activeCase.input, case_id: activeCase.case_id }),
